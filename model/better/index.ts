@@ -4,9 +4,20 @@ import {CreateAxiosProxy} from "../../utils/proxyAgent";
 import es from "event-stream";
 import {ErrorData, Event, EventStream, MessageData, parseJSON} from "../../utils";
 
+const axios = require('axios');
+
+axios.interceptors.response.use(res => {
+  if (res.config.url.includes('captcha')) {
+    return {
+      data: { sucess: true }
+    };
+  }
+  return res;
+});
+
 interface Message {
     role: string;
-    content: string;
+    content: string; 
 }
 
 const modelMap = {
@@ -64,7 +75,7 @@ export class Better extends Chat {
                         break;
                     case Event.message:
                         result.content += (data as MessageData).content || '';
-                        break;
+                        break;  
                     case Event.error:
                         result.error = (data as ErrorData).error;
                         break;
@@ -94,13 +105,13 @@ export class Better extends Chat {
                 }
                 const data = parseJSON(dataStr, {} as any);
                 if (!data?.choices) {
-                    stream.write(Event.error, {error: 'not found data.choices'})
+                    stream.write(Event.error, {error: 'not found data.choices'})  
                     stream.end();
                     return;
                 }
                 const [{delta: {content = ""}, finish_reason}] = data.choices;
                 if (finish_reason === 'stop') {
-                    stream.write(Event.done, {content: ''})
+                    stream.write(Event.done, {content: ''})  
                     stream.end();
                     return;
                 }
@@ -108,7 +119,7 @@ export class Better extends Chat {
             }))
         } catch (e: any) {
             console.error(e);
-            stream.write(Event.error, {error: e.message})
+            stream.write(Event.error, {error: e.message})  
             stream.end();
         }
     }
